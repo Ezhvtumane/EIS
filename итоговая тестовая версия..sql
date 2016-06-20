@@ -1,6 +1,6 @@
 declare @bd as varchar(10)='01.08.2015'
 declare @ed as varchar(10)='31.08.2015'
-	--Выставленно стационар ИБ и ДС
+	--Р’С‹СЃС‚Р°РІР»РµРЅРЅРѕ СЃС‚Р°С†РёРѕРЅР°СЂ РР‘ Рё Р”РЎ
 select ILL_HISTORY,ID_CASE, YEAR(DATE_END) data,DATE_END, sumib, kolIB,kolsly4,1 flag,ID_CASE_CAST 
 into #t_eis_s 
 from 
@@ -20,7 +20,7 @@ group by ILL_HISTORY,t3.ID_CASE,t3.DATE_END,ID_CASE_CAST
 ) t
 group by ILL_HISTORY, ID_CASE,DATE_END,ID_CASE_CAST
 ) t
---Отказы стационар ИБ и ДС
+--РћС‚РєР°Р·С‹ СЃС‚Р°С†РёРѕРЅР°СЂ РР‘ Рё Р”РЎ
 insert into #t_eis_s 
 select  ILLH,ID_CASE, YEAR(data) data, data, sum(cost), 1 kolib ,COUNT(*) kolsly4,-1 flag,Case_cast
 from
@@ -31,33 +31,33 @@ case when t2.ID_CASE is null then t22.ID_CASE else t2.ID_CASE end ID_CASE,
 case when t2.ILL_HISTORY IS NULL then t22.ILL_HISTORY else t2.ILL_HISTORY end ILLH,						
 case when t2.ID_CASE_CAST IS NULL then t22.ID_CASE_CAST else t2.ID_CASE_CAST end Case_cast,
 /*
-В таблице с отказами заполнены не все значения ID_CASE и ID_SERVICE, 
-а по ним потом тянем ILL_HISTORY из разных таблиц, поэтому тут кейс, 
-чтобы убрать NULLы и заполничть все поля с ILL_HISTORY
+Р’ С‚Р°Р±Р»РёС†Рµ СЃ РѕС‚РєР°Р·Р°РјРё Р·Р°РїРѕР»РЅРµРЅС‹ РЅРµ РІСЃРµ Р·РЅР°С‡РµРЅРёСЏ ID_CASE Рё ID_SERVICE, 
+Р° РїРѕ РЅРёРј РїРѕС‚РѕРј С‚СЏРЅРµРј ILL_HISTORY РёР· СЂР°Р·РЅС‹С… С‚Р°Р±Р»РёС†, РїРѕСЌС‚РѕРјСѓ С‚СѓС‚ РєРµР№СЃ, 
+С‡С‚РѕР±С‹ СѓР±СЂР°С‚СЊ NULLС‹ Рё Р·Р°РїРѕР»РЅРёС‡С‚СЊ РІСЃРµ РїРѕР»СЏ СЃ ILL_HISTORY
 */														
 SUMM_REFUSE cost
 from OPENquery(EISS,'select * from REFUSES ') t										
 /*
-ACT_DATE  это Дата рст в ЕИС, а ReFUSE_DATE это дата ПП. 
-ACT_MODE не ясно, что но если 0, то в ЕИСе отказа не видно, позжтому фильтр.
-Ключ - ID_REFUSE
+ACT_DATE  СЌС‚Рѕ Р”Р°С‚Р° СЂСЃС‚ РІ Р•РРЎ, Р° ReFUSE_DATE СЌС‚Рѕ РґР°С‚Р° РџРџ. 
+ACT_MODE РЅРµ СЏСЃРЅРѕ, С‡С‚Рѕ РЅРѕ РµСЃР»Рё 0, С‚Рѕ РІ Р•РРЎРµ РѕС‚РєР°Р·Р° РЅРµ РІРёРґРЅРѕ, РїРѕР·Р¶С‚РѕРјСѓ С„РёР»СЊС‚СЂ.
+РљР»СЋС‡ - ID_REFUSE
 */
 left join
 (
 select * from OPENquery(EISS, 'select * from REFUSES_OBJ ')								
 )t1 on t.ID_REFUSE=t1.ID_REFUSE											
-/*Отказы с ID_CASE и ID_SERVICE и суммой отказа. 
-Еще есть процент отказа. Не ясно учитывается он или нет в сумме отказа. 
-UPD Не учитывается, по крайней мере в друго отчете по отказам, берем просто сумму отказа без умножения на коэф.
-(Спросить у Якиной)
+/*РћС‚РєР°Р·С‹ СЃ ID_CASE Рё ID_SERVICE Рё СЃСѓРјРјРѕР№ РѕС‚РєР°Р·Р°. 
+Р•С‰Рµ РµСЃС‚СЊ РїСЂРѕС†РµРЅС‚ РѕС‚РєР°Р·Р°. РќРµ СЏСЃРЅРѕ СѓС‡РёС‚С‹РІР°РµС‚СЃСЏ РѕРЅ РёР»Рё РЅРµС‚ РІ СЃСѓРјРјРµ РѕС‚РєР°Р·Р°. 
+UPD РќРµ СѓС‡РёС‚С‹РІР°РµС‚СЃСЏ, РїРѕ РєСЂР°Р№РЅРµР№ РјРµСЂРµ РІ РґСЂСѓРіРѕ РѕС‚С‡РµС‚Рµ РїРѕ РѕС‚РєР°Р·Р°Рј, Р±РµСЂРµРј РїСЂРѕСЃС‚Рѕ СЃСѓРјРјСѓ РѕС‚РєР°Р·Р° Р±РµР· СѓРјРЅРѕР¶РµРЅРёСЏ РЅР° РєРѕСЌС„.
+(РЎРїСЂРѕСЃРёС‚СЊ Сѓ РЇРєРёРЅРѕР№)
 */
 left join 
 (
 select ID_CASE,ILL_HISTORY, DATE_END,ID_CASE_CAST from OPENquery(EISS, 'select * from CASES')				
-group by  ID_CASE, ILL_HISTORY, DATE_END,ID_CASE_CAST /*Группировка??? Хорошо бы выяснить зачем*/
+group by  ID_CASE, ILL_HISTORY, DATE_END,ID_CASE_CAST /*Р“СЂСѓРїРїРёСЂРѕРІРєР°??? РҐРѕСЂРѕС€Рѕ Р±С‹ РІС‹СЏСЃРЅРёС‚СЊ Р·Р°С‡РµРј*/
 ) t2 on  t1.ID_CASE=t2.ID_CASE
 /*
-Услуги с номером истории болезни. Именно по ID_CASE тянем номер ИБ к отказу.
+РЈСЃР»СѓРіРё СЃ РЅРѕРјРµСЂРѕРј РёСЃС‚РѕСЂРёРё Р±РѕР»РµР·РЅРё. РРјРµРЅРЅРѕ РїРѕ ID_CASE С‚СЏРЅРµРј РЅРѕРјРµСЂ РР‘ Рє РѕС‚РєР°Р·Сѓ.
 */
 left join 
 (
@@ -68,20 +68,20 @@ select t1.ID_CASE,ILL_HISTORY,ID_SERVICE,t1.DATE_END,t1.ID_CASE_CAST from OPENqu
 	)t1 on t.ID_CASE=t1.ID_CASE
 ) t22 on  t1.ID_SERVICE=t22.ID_SERVICE										
 /*
-В таблице с отказами REFUSES_OBJ не у всех кортежей есть ID_CASE, но у них есть ID_SERVICE.
-Поэтому берем таблицу CASE_SERVICES, где есть соответствие между ID_SERVICE и ID_CASE(from CASES)
-и джойним к ней CASES из последней берем номер ИБ -> profit
+Р’ С‚Р°Р±Р»РёС†Рµ СЃ РѕС‚РєР°Р·Р°РјРё REFUSES_OBJ РЅРµ Сѓ РІСЃРµС… РєРѕСЂС‚РµР¶РµР№ РµСЃС‚СЊ ID_CASE, РЅРѕ Сѓ РЅРёС… РµСЃС‚СЊ ID_SERVICE.
+РџРѕСЌС‚РѕРјСѓ Р±РµСЂРµРј С‚Р°Р±Р»РёС†Сѓ CASE_SERVICES, РіРґРµ РµСЃС‚СЊ СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРµ РјРµР¶РґСѓ ID_SERVICE Рё ID_CASE(from CASES)
+Рё РґР¶РѕР№РЅРёРј Рє РЅРµР№ CASES РёР· РїРѕСЃР»РµРґРЅРµР№ Р±РµСЂРµРј РЅРѕРјРµСЂ РР‘ -> profit
 */
 where ACT_DATE between @bd and @ed and total_summ<>0 and ACT_MODE <>0 and (t2.ID_CASE_CAST<>1 or t22.ID_CASE_CAST<>1)
 /*
-По ID_CASE_CAST различаем амбулаторыне мрт-скт от обычных стационраных ИБ и ДС. 1 - это поликлиника. Справичник в еисе VMU_CASE_CAST
+РџРѕ ID_CASE_CAST СЂР°Р·Р»РёС‡Р°РµРј Р°РјР±СѓР»Р°С‚РѕСЂС‹РЅРµ РјСЂС‚-СЃРєС‚ РѕС‚ РѕР±С‹С‡РЅС‹С… СЃС‚Р°С†РёРѕРЅСЂР°РЅС‹С… РР‘ Рё Р”РЎ. 1 - СЌС‚Рѕ РїРѕР»РёРєР»РёРЅРёРєР°. РЎРїСЂР°РІРёС‡РЅРёРє РІ РµРёСЃРµ VMU_CASE_CAST
 */	
 ) t
 group by ILLH,ID_CASE,data,Case_cast
 /*
-Таким образом в таблицу #t_eis_s попадают только услуги из ИБ и ДС
+РўР°РєРёРј РѕР±СЂР°Р·РѕРј РІ С‚Р°Р±Р»РёС†Сѓ #t_eis_s РїРѕРїР°РґР°СЋС‚ С‚РѕР»СЊРєРѕ СѓСЃР»СѓРіРё РёР· РР‘ Рё Р”РЎ
 */
-							--Выставленно стационар МРТ и СКТ
+							--Р’С‹СЃС‚Р°РІР»РµРЅРЅРѕ СЃС‚Р°С†РёРѕРЅР°СЂ РњР Рў Рё РЎРљРў
 select ILL_HISTORY,ID_CASE, YEAR(DATE_END) data,DATE_END, sumib, kolIB,kolsly4,1 flag,ID_CASE_CAST,docname
 into #t_eis_s_mrt 
 from 
@@ -105,7 +105,7 @@ group by ILL_HISTORY,t3.ID_CASE,t3.DATE_END,ID_CASE_CAST,SURNAME,NAME,SECOND_NAM
 ) t
 group by ILL_HISTORY, ID_CASE,DATE_END,ID_CASE_CAST,docname
 ) t
---Отказы стационар МРТ и СКТ
+--РћС‚РєР°Р·С‹ СЃС‚Р°С†РёРѕРЅР°СЂ РњР Рў Рё РЎРљРў
 insert into #t_eis_s_mrt 
 select  ILLH,ID_CASE, YEAR(data) data, data, sum(cost), 1 kolib ,COUNT(*) kolsly4,-1 flag,Case_cast,docname
 from
@@ -117,37 +117,37 @@ case when t2.ILL_HISTORY IS NULL then t22.ILL_HISTORY else t2.ILL_HISTORY end IL
 case when t2.ID_CASE_CAST IS NULL then t22.ID_CASE_CAST else t2.ID_CASE_CAST end Case_cast,
 case when t4.docname IS NULL then t22.docname else t4.docname end docname,
 /*
-В таблице с отказами заполнены не все значения ID_CASE и ID_SERVICE, 
-а по ним потом тянем ILL_HISTORY из разных таблиц, поэтому тут кейс, 
-чтобы убрать NULLы и заполничть все поля с ILL_HISTORY
+Р’ С‚Р°Р±Р»РёС†Рµ СЃ РѕС‚РєР°Р·Р°РјРё Р·Р°РїРѕР»РЅРµРЅС‹ РЅРµ РІСЃРµ Р·РЅР°С‡РµРЅРёСЏ ID_CASE Рё ID_SERVICE, 
+Р° РїРѕ РЅРёРј РїРѕС‚РѕРј С‚СЏРЅРµРј ILL_HISTORY РёР· СЂР°Р·РЅС‹С… С‚Р°Р±Р»РёС†, РїРѕСЌС‚РѕРјСѓ С‚СѓС‚ РєРµР№СЃ, 
+С‡С‚РѕР±С‹ СѓР±СЂР°С‚СЊ NULLС‹ Рё Р·Р°РїРѕР»РЅРёС‡С‚СЊ РІСЃРµ РїРѕР»СЏ СЃ ILL_HISTORY
 */														
 SUMM_REFUSE cost
 from OPENquery(EISS,'select * from REFUSES ') t										
 /*
-ACT_DATE  это Дата рст в ЕИС, а ReFUSE_DATE это дата ПП. 
-ACT_MODE не ясно, что но если 0, то в ЕИСе отказа не видно, позжтому фильтр.
-Ключ - ID_REFUSE
+ACT_DATE  СЌС‚Рѕ Р”Р°С‚Р° СЂСЃС‚ РІ Р•РРЎ, Р° ReFUSE_DATE СЌС‚Рѕ РґР°С‚Р° РџРџ. 
+ACT_MODE РЅРµ СЏСЃРЅРѕ, С‡С‚Рѕ РЅРѕ РµСЃР»Рё 0, С‚Рѕ РІ Р•РРЎРµ РѕС‚РєР°Р·Р° РЅРµ РІРёРґРЅРѕ, РїРѕР·Р¶С‚РѕРјСѓ С„РёР»СЊС‚СЂ.
+РљР»СЋС‡ - ID_REFUSE
 */
 left join
 (
 select * from OPENquery(EISS, 'select * from REFUSES_OBJ ')								
 )t1 on t.ID_REFUSE=t1.ID_REFUSE											
-/*Отказы с ID_CASE и ID_SERVICE и суммой отказа. 
-Еще есть процент отказа. Не ясно учитывается он или нет в сумме отказа. 
-UPD, Не учитывается, по крайней мере в друго отчете по отказам, берем просто сумму отказа без умножения на коэф.
-(Спросить у Якиной)
+/*РћС‚РєР°Р·С‹ СЃ ID_CASE Рё ID_SERVICE Рё СЃСѓРјРјРѕР№ РѕС‚РєР°Р·Р°. 
+Р•С‰Рµ РµСЃС‚СЊ РїСЂРѕС†РµРЅС‚ РѕС‚РєР°Р·Р°. РќРµ СЏСЃРЅРѕ СѓС‡РёС‚С‹РІР°РµС‚СЃСЏ РѕРЅ РёР»Рё РЅРµС‚ РІ СЃСѓРјРјРµ РѕС‚РєР°Р·Р°. 
+UPD, РќРµ СѓС‡РёС‚С‹РІР°РµС‚СЃСЏ, РїРѕ РєСЂР°Р№РЅРµР№ РјРµСЂРµ РІ РґСЂСѓРіРѕ РѕС‚С‡РµС‚Рµ РїРѕ РѕС‚РєР°Р·Р°Рј, Р±РµСЂРµРј РїСЂРѕСЃС‚Рѕ СЃСѓРјРјСѓ РѕС‚РєР°Р·Р° Р±РµР· СѓРјРЅРѕР¶РµРЅРёСЏ РЅР° РєРѕСЌС„.
+(РЎРїСЂРѕСЃРёС‚СЊ Сѓ РЇРєРёРЅРѕР№)
 */
 left join 
 (
 select ID_CASE,ILL_HISTORY, DATE_END,ID_CASE_CAST,ID_DOCTOR from OPENquery(EISS, 'select * from CASES')			
-group by  ID_CASE, ILL_HISTORY, DATE_END,ID_CASE_CAST,ID_DOCTOR /*Группировка??? Хорошо бы выяснить зачем*/
+group by  ID_CASE, ILL_HISTORY, DATE_END,ID_CASE_CAST,ID_DOCTOR /*Р“СЂСѓРїРїРёСЂРѕРІРєР°??? РҐРѕСЂРѕС€Рѕ Р±С‹ РІС‹СЏСЃРЅРёС‚СЊ Р·Р°С‡РµРј*/
 ) t2 on  t1.ID_CASE=t2.ID_CASE
 left join
 (
 select ID_DOCTOR,SURNAME+' '+NAME+' '+SECOND_NAME docname from OPENquery(EISS, 'select * from VMU_DOCTORS')
 )t4 on t2.ID_DOCTOR=t4.ID_DOCTOR
 /*
-Услуги с номером истории болезни. Именно по ID_CASE тянем номер ИБ к отказу.
+РЈСЃР»СѓРіРё СЃ РЅРѕРјРµСЂРѕРј РёСЃС‚РѕСЂРёРё Р±РѕР»РµР·РЅРё. РРјРµРЅРЅРѕ РїРѕ ID_CASE С‚СЏРЅРµРј РЅРѕРјРµСЂ РР‘ Рє РѕС‚РєР°Р·Сѓ.
 */
 left join 
 (
@@ -162,23 +162,23 @@ select t1.ID_CASE,ILL_HISTORY,ID_SERVICE,t1.DATE_END,t1.ID_CASE_CAST,docname fro
 	)t4 on t1.ID_DOCTOR=t4.ID_DOCTOR
 ) t22 on  t1.ID_SERVICE=t22.ID_SERVICE										
 /*
-В таблице с отказами REFUSES_OBJ не у всех кортежей есть ID_CASE, но у них есть ID_SERVICE.
-Поэтому берем таблицу CASE_SERVICES, где есть соответствие между ID_SERVICE и ID_CASE(from CASES)
-и джойним к ней CASES из последней берем номер ИБ -> profit
+Р’ С‚Р°Р±Р»РёС†Рµ СЃ РѕС‚РєР°Р·Р°РјРё REFUSES_OBJ РЅРµ Сѓ РІСЃРµС… РєРѕСЂС‚РµР¶РµР№ РµСЃС‚СЊ ID_CASE, РЅРѕ Сѓ РЅРёС… РµСЃС‚СЊ ID_SERVICE.
+РџРѕСЌС‚РѕРјСѓ Р±РµСЂРµРј С‚Р°Р±Р»РёС†Сѓ CASE_SERVICES, РіРґРµ РµСЃС‚СЊ СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРµ РјРµР¶РґСѓ ID_SERVICE Рё ID_CASE(from CASES)
+Рё РґР¶РѕР№РЅРёРј Рє РЅРµР№ CASES РёР· РїРѕСЃР»РµРґРЅРµР№ Р±РµСЂРµРј РЅРѕРјРµСЂ РР‘ -> profit
 */
 where ACT_DATE between @bd and @ed and total_summ<>0 and ACT_MODE <>0 and (t2.ID_CASE_CAST=1 or t22.ID_CASE_CAST=1)
 /*
-По ID_CASE_CAST различаем амбулаторыне мрт-скт от обычных стационраных ИБ и ДС. 1 - это поликлиника. Справичник в еисе VMU_CASE_CAST
+РџРѕ ID_CASE_CAST СЂР°Р·Р»РёС‡Р°РµРј Р°РјР±СѓР»Р°С‚РѕСЂС‹РЅРµ РјСЂС‚-СЃРєС‚ РѕС‚ РѕР±С‹С‡РЅС‹С… СЃС‚Р°С†РёРѕРЅСЂР°РЅС‹С… РР‘ Рё Р”РЎ. 1 - СЌС‚Рѕ РїРѕР»РёРєР»РёРЅРёРєР°. РЎРїСЂР°РІРёС‡РЅРёРє РІ РµРёСЃРµ VMU_CASE_CAST
 */	
 ) t
 group by ILLH,ID_CASE,data,Case_cast,docname
 /*
-Таким образом в таблицу #t_eis_s_mrt попадают только услуги из амбулаторок МРТ и СКТ
+РўР°РєРёРј РѕР±СЂР°Р·РѕРј РІ С‚Р°Р±Р»РёС†Сѓ #t_eis_s_mrt РїРѕРїР°РґР°СЋС‚ С‚РѕР»СЊРєРѕ СѓСЃР»СѓРіРё РёР· Р°РјР±СѓР»Р°С‚РѕСЂРѕРє РњР Рў Рё РЎРљРў
 */
 /*
-Делим услуги из ЕИС стационар на 2 таболицы чтобы было удобнее потом тянуть услуги из КМИСа
+Р”РµР»РёРј СѓСЃР»СѓРіРё РёР· Р•РРЎ СЃС‚Р°С†РёРѕРЅР°СЂ РЅР° 2 С‚Р°Р±РѕР»РёС†С‹ С‡С‚РѕР±С‹ Р±С‹Р»Рѕ СѓРґРѕР±РЅРµРµ РїРѕС‚РѕРј С‚СЏРЅСѓС‚СЊ СѓСЃР»СѓРіРё РёР· РљРњРРЎР°
 */
-			--Выставленно поликлиника
+			--Р’С‹СЃС‚Р°РІР»РµРЅРЅРѕ РїРѕР»РёРєР»РёРЅРёРєР°
 select ILL_HISTORY,ID_CASE, YEAR(DATE_END) data,DATE_END,sumib,kolIB,kolsly4,1 flag ,ID_CASE_CAST,surname,name,second_name
 into #t_eis_p
 from 
@@ -202,7 +202,7 @@ group by ILL_HISTORY,t3.ID_CASE,t3.DATE_END,ID_CASE_CAST,surname,name,second_nam
 ) t
 group by  ILL_HISTORY, ID_CASE, DATE_END,ID_CASE_CAST,surname,name,second_name
 ) t
---Отказы поликлиника
+--РћС‚РєР°Р·С‹ РїРѕР»РёРєР»РёРЅРёРєР°
 insert into #t_eis_p select ILLH,ID_CASE, YEAR(DATE_END), DATE_END,cost,1 kolib,1 kolsly4,-1 flag,ID_CASE_CAST,surname,name,second_name from
 (
 select t2.DATE_END,
@@ -213,26 +213,26 @@ case when t4.surname IS NULL then t22.surname else t4.surname end surname,
 case when t4.name IS NULL then t22.name else t4.name end name,
 case when t4.second_name IS NULL then t22.second_name else t4.second_name end second_name,
 /*
-В таблице с отказами заполнены не все значения ID_CASE и ID_SERVICE, 
-а по ним потом тянем ILL_HISTORY из разных таблиц, поэтому тут кейс, 
-чтобы убрать NULLы и заполничть все поля с ILL_HISTORY
+Р’ С‚Р°Р±Р»РёС†Рµ СЃ РѕС‚РєР°Р·Р°РјРё Р·Р°РїРѕР»РЅРµРЅС‹ РЅРµ РІСЃРµ Р·РЅР°С‡РµРЅРёСЏ ID_CASE Рё ID_SERVICE, 
+Р° РїРѕ РЅРёРј РїРѕС‚РѕРј С‚СЏРЅРµРј ILL_HISTORY РёР· СЂР°Р·РЅС‹С… С‚Р°Р±Р»РёС†, РїРѕСЌС‚РѕРјСѓ С‚СѓС‚ РєРµР№СЃ, 
+С‡С‚РѕР±С‹ СѓР±СЂР°С‚СЊ NULLС‹ Рё Р·Р°РїРѕР»РЅРёС‡С‚СЊ РІСЃРµ РїРѕР»СЏ СЃ ILL_HISTORY
 */
 SUMM_REFUSE cost 
 from OPENquery(EIS,'select * from REFUSES') t										
 /*
-ACT_DATE  это Дата рст в ЕИС, а ReFUSE_DATE это дата ПП. 
-ACT_MODE не ясно, что но если 0, то в ЕИСе отказа не видно, позжтому фильтр.
-Ключ - ID_REFUSE
+ACT_DATE  СЌС‚Рѕ Р”Р°С‚Р° СЂСЃС‚ РІ Р•РРЎ, Р° ReFUSE_DATE СЌС‚Рѕ РґР°С‚Р° РџРџ. 
+ACT_MODE РЅРµ СЏСЃРЅРѕ, С‡С‚Рѕ РЅРѕ РµСЃР»Рё 0, С‚Рѕ РІ Р•РРЎРµ РѕС‚РєР°Р·Р° РЅРµ РІРёРґРЅРѕ, РїРѕР·Р¶С‚РѕРјСѓ С„РёР»СЊС‚СЂ.
+РљР»СЋС‡ - ID_REFUSE
 */
 left join
 (
 select * from OPENquery(EIS, 'select * from REFUSES_OBJ ')									
 )t1 on t.ID_REFUSE=t1.ID_REFUSE											
 /*
-Отказы с ID_CASE и ID_SERVICE и суммой отказа. 
-Еще есть процент отказа. Не ясно учитывается он или нет в сумме отказа. 
-UPD, Не учитывается, по крайней мере в друго отчете по отказам, берем просто сумму отказа без умножения на коэф.
-(Спросить у Якиной)
+РћС‚РєР°Р·С‹ СЃ ID_CASE Рё ID_SERVICE Рё СЃСѓРјРјРѕР№ РѕС‚РєР°Р·Р°. 
+Р•С‰Рµ РµСЃС‚СЊ РїСЂРѕС†РµРЅС‚ РѕС‚РєР°Р·Р°. РќРµ СЏСЃРЅРѕ СѓС‡РёС‚С‹РІР°РµС‚СЃСЏ РѕРЅ РёР»Рё РЅРµС‚ РІ СЃСѓРјРјРµ РѕС‚РєР°Р·Р°. 
+UPD, РќРµ СѓС‡РёС‚С‹РІР°РµС‚СЃСЏ, РїРѕ РєСЂР°Р№РЅРµР№ РјРµСЂРµ РІ РґСЂСѓРіРѕ РѕС‚С‡РµС‚Рµ РїРѕ РѕС‚РєР°Р·Р°Рј, Р±РµСЂРµРј РїСЂРѕСЃС‚Рѕ СЃСѓРјРјСѓ РѕС‚РєР°Р·Р° Р±РµР· СѓРјРЅРѕР¶РµРЅРёСЏ РЅР° РєРѕСЌС„.
+(РЎРїСЂРѕСЃРёС‚СЊ Сѓ РЇРєРёРЅРѕР№)
 */
 left join 
 (
@@ -240,7 +240,7 @@ select ID_CASE,ILL_HISTORY,DATE_END,ID_CASE_CAST,ID_DOCTOR from OPENquery(EIS, '
 --group by ID_CASE,ILL_HISTORY,DATE_END,ID_CASE_CAST
 ) t2 on  t1.ID_CASE=t2.ID_CASE
 /*
-Услуги с номером истории болезни. Именно по ID_CASE тянем номер ИБ к отказу.
+РЈСЃР»СѓРіРё СЃ РЅРѕРјРµСЂРѕРј РёСЃС‚РѕСЂРёРё Р±РѕР»РµР·РЅРё. РРјРµРЅРЅРѕ РїРѕ ID_CASE С‚СЏРЅРµРј РЅРѕРјРµСЂ РР‘ Рє РѕС‚РєР°Р·Сѓ.
 */
 left join 
 (
@@ -255,32 +255,32 @@ select t1.ID_CASE,ILL_HISTORY,ID_SERVICE,ID_CASE_CAST,surname,name,second_name f
 	)t4 on t1.ID_DOCTOR=t4.ID_DOCTOR
 ) t22 on  t1.ID_SERVICE=t22.ID_SERVICE										
 /*
-В таблице с отказами REFUSES_OBJ не у всех кортежей есть ID_CASE, но у них есть ID_SERVICE.
-Поэтому берем таблицу CASE_SERVICES, где есть соответствие между ID_SERVICE и ID_CASE(from CASES)
-и джойним к ней CASES из последней берем номер ИБ -> profit
+Р’ С‚Р°Р±Р»РёС†Рµ СЃ РѕС‚РєР°Р·Р°РјРё REFUSES_OBJ РЅРµ Сѓ РІСЃРµС… РєРѕСЂС‚РµР¶РµР№ РµСЃС‚СЊ ID_CASE, РЅРѕ Сѓ РЅРёС… РµСЃС‚СЊ ID_SERVICE.
+РџРѕСЌС‚РѕРјСѓ Р±РµСЂРµРј С‚Р°Р±Р»РёС†Сѓ CASE_SERVICES, РіРґРµ РµСЃС‚СЊ СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРµ РјРµР¶РґСѓ ID_SERVICE Рё ID_CASE(from CASES)
+Рё РґР¶РѕР№РЅРёРј Рє РЅРµР№ CASES РёР· РїРѕСЃР»РµРґРЅРµР№ Р±РµСЂРµРј РЅРѕРјРµСЂ РР‘ -> profit
 */
 left join
 	(
 	select * from OPENquery(EIS, 'select * from VMU_DOCTORS')
 	)t4 on t2.ID_DOCTOR=t4.ID_DOCTOR																		
 /*
-Чтобы правильно приджойнить услуги к ЕИСу, надо фамилию врача
+Р§С‚РѕР±С‹ РїСЂР°РІРёР»СЊРЅРѕ РїСЂРёРґР¶РѕР№РЅРёС‚СЊ СѓСЃР»СѓРіРё Рє Р•РРЎСѓ, РЅР°РґРѕ С„Р°РјРёР»РёСЋ РІСЂР°С‡Р°
 */
 where ACT_DATE between @bd and @ed and total_summ<>0 and ACT_MODE <>0 
 ) t
 /*
-Взяли из ЕИСа все записи (выставленные и отказанные) за промежуток времени. Отказанные flag=-1 выставленные flag=1
+Р’Р·СЏР»Рё РёР· Р•РРЎР° РІСЃРµ Р·Р°РїРёСЃРё (РІС‹СЃС‚Р°РІР»РµРЅРЅС‹Рµ Рё РѕС‚РєР°Р·Р°РЅРЅС‹Рµ) Р·Р° РїСЂРѕРјРµР¶СѓС‚РѕРє РІСЂРµРјРµРЅРё. РћС‚РєР°Р·Р°РЅРЅС‹Рµ flag=-1 РІС‹СЃС‚Р°РІР»РµРЅРЅС‹Рµ flag=1
 */
 /*
-По ИБ. Соединяем ИБ из ЕИСа с ИБ из КМИСа. Отделение и ДОКЮНИД из КМИСа, остальное из ЕИСа
+РџРѕ РР‘. РЎРѕРµРґРёРЅСЏРµРј РР‘ РёР· Р•РРЎР° СЃ РР‘ РёР· РљРњРРЎР°. РћС‚РґРµР»РµРЅРёРµ Рё Р”РћРљР®РќРР” РёР· РљРњРРЎР°, РѕСЃС‚Р°Р»СЊРЅРѕРµ РёР· Р•РРЎР°
 */
-select ISNULL(ctxtOtd,'Не определено') otd,ILL_HISTORY, sumib, flag,DOCUNID
+select ISNULL(ctxtOtd,'РќРµ РѕРїСЂРµРґРµР»РµРЅРѕ') otd,ILL_HISTORY, sumib, flag,DOCUNID
 into #t_eis_kmis_s
 from #t_eis_s eis
 left join IskStat2.dbo.istortable ib on 
-((ILL_HISTORY not like '%ДС%' and REPLACE(eis.ILL_HISTORY,'-',' ')=ib.txtNumberIB collate Cyrillic_General_CI_AS) or (eis.ILL_HISTORY=ib.txtNumberIB collate Cyrillic_General_CI_AS))
+((ILL_HISTORY not like '%Р”РЎ%' and REPLACE(eis.ILL_HISTORY,'-',' ')=ib.txtNumberIB collate Cyrillic_General_CI_AS) or (eis.ILL_HISTORY=ib.txtNumberIB collate Cyrillic_General_CI_AS))
 and eis.data=YEAR(ib.datDateVipis)
-/*Считаем коэффициент оплаты для ЕИСа. Отделения ДКБ*/
+/*РЎС‡РёС‚Р°РµРј РєРѕСЌС„С„РёС†РёРµРЅС‚ РѕРїР»Р°С‚С‹ РґР»СЏ Р•РРЎР°. РћС‚РґРµР»РµРЅРёСЏ Р”РљР‘*/
 select t_all.otd, ROUND(sumall/sumv,6) koeff_eis_s 
 into #t_eis_koeff_s
 from
@@ -293,29 +293,29 @@ left join
 select Otd,sum(sumib*flag) sumall from #t_eis_kmis_s
 group by Otd
 )t_all on t_vyst.otd=t_all.otd
-/*Истории с их ценой в ЕИСе и DOCUNIDом из историй КМИСа, по которому потом тянем услуги и анализы*/
+/*РСЃС‚РѕСЂРёРё СЃ РёС… С†РµРЅРѕР№ РІ Р•РРЎРµ Рё DOCUNIDРѕРј РёР· РёСЃС‚РѕСЂРёР№ РљРњРРЎР°, РїРѕ РєРѕС‚РѕСЂРѕРјСѓ РїРѕС‚РѕРј С‚СЏРЅРµРј СѓСЃР»СѓРіРё Рё Р°РЅР°Р»РёР·С‹*/
 select otd,ILL_HISTORY, (sumib*koeff_eis_s) sumibk, flag,DOCUNID
 into #t_eis_kmis_s_ib
 from #t_eis_s eis
 left join IskStat2.dbo.istortable ib on 
-((ILL_HISTORY not like '%ДС%' and REPLACE(eis.ILL_HISTORY,'-',' ')=ib.txtNumberIB collate Cyrillic_General_CI_AS) or (eis.ILL_HISTORY=ib.txtNumberIB collate Cyrillic_General_CI_AS))
+((ILL_HISTORY not like '%Р”РЎ%' and REPLACE(eis.ILL_HISTORY,'-',' ')=ib.txtNumberIB collate Cyrillic_General_CI_AS) or (eis.ILL_HISTORY=ib.txtNumberIB collate Cyrillic_General_CI_AS))
 and eis.data=YEAR(ib.datDateVipis)
-left join #t_eis_koeff_s  eis_k on isnull(ib.ctxtotd,'Не определено')=eis_k.otd
+left join #t_eis_koeff_s  eis_k on isnull(ib.ctxtotd,'РќРµ РѕРїСЂРµРґРµР»РµРЅРѕ')=eis_k.otd
 where flag=1
 order by 2
-/*Услуги и анализы из ИБ берем по ДОКЮНИДу из ИБ.*/
-select ctxtOtd,ctxtPayDoctor2,Test,DTXTNameILL,datDateVizit,case when IssKol>100 then 1 else IssKol end isskol,case when kod2='А25.30.001.001' then price else isnull(PLH_Price,price)end price,
+/*РЈСЃР»СѓРіРё Рё Р°РЅР°Р»РёР·С‹ РёР· РР‘ Р±РµСЂРµРј РїРѕ Р”РћРљР®РќРР”Сѓ РёР· РР‘.*/
+select ctxtOtd,ctxtPayDoctor2,Test,DTXTNameILL,datDateVizit,case when IssKol>100 then 1 else IssKol end isskol,case when kod2='Рђ25.30.001.001' then price else isnull(PLH_Price,price)end price,
 case when CRFromFLD IN (select distinct DocUNID from #t_eis_kmis_s_ib) then CRFromFLD else CRFromD end num ,otdclin
 into #t_kmis_usl_s
 from 
-(select isnull(IskStat2.dbo.Doctors.ctxtOtd,'Не определено') ctxtotd,
-case when ctxtPayDoctor2 IS null then 'Не определено' when ctxtPayDoctor2='' then 'Не определено' else ctxtPayDoctor2 end ctxtPayDoctor2,
+(select isnull(IskStat2.dbo.Doctors.ctxtOtd,'РќРµ РѕРїСЂРµРґРµР»РµРЅРѕ') ctxtotd,
+case when ctxtPayDoctor2 IS null then 'РќРµ РѕРїСЂРµРґРµР»РµРЅРѕ' when ctxtPayDoctor2='' then 'РќРµ РѕРїСЂРµРґРµР»РµРЅРѕ' else ctxtPayDoctor2 end ctxtPayDoctor2,
 Test,DTXTNameILL,IskStat2.dbo.PatientServices.datDateVizit,
 IssKol,kod2,CRFromD,CRFromFLD,Price , IskStat2.dbo.PatientServices.ctxtOtd otdclin
 from IskStat2.dbo.PatientServices 
 left join IskStat2.dbo.Doctors on IskStat2.dbo.PatientServices.prMyDoctorCodeR2=IskStat2.dbo.Doctors.Name and prMyDoctorCodeR2<>''
 where (NaznStatus=2 or NaznStatus=3) and PayType=1 and 
-(CRFromD in (select distinct DocUNID from #t_eis_kmis_s_ib) or CRFromFLD in (select distinct DocUNID from #t_eis_kmis_s_ib)) /*(услуга выполнена и ОМС)*/
+(CRFromD in (select distinct DocUNID from #t_eis_kmis_s_ib) or CRFromFLD in (select distinct DocUNID from #t_eis_kmis_s_ib)) /*(СѓСЃР»СѓРіР° РІС‹РїРѕР»РЅРµРЅР° Рё РћРњРЎ)*/
 ) ps
 left join
 (
@@ -338,7 +338,7 @@ select ctxtOtd collate Cyrillic_General_CI_AS,EXCECUROR_NAME collate Cyrillic_Ge
 						 o.Parent_Doc_ID ,o.name,o.ctxtotd,o.EXCECUROR_NAME,o.DATE,o.ANALIS_NUM,o.ANALIS_NAME,o.OTD otdclin
 					from 
 						(select 
-						FAM + ' ' + IM + ' ' + OT + ' (' + DR + ')' name, EXCECUROR_NAME, 'Клинико-диагностическая лаборатория' ctxtotd, ANALIS_NAME,ANALIS_NUM,ID,date,Parent_Doc_ID ,OTD
+						FAM + ' ' + IM + ' ' + OT + ' (' + DR + ')' name, EXCECUROR_NAME, 'РљР»РёРЅРёРєРѕ-РґРёР°РіРЅРѕСЃС‚РёС‡РµСЃРєР°СЏ Р»Р°Р±РѕСЂР°С‚РѕСЂРёСЏ' ctxtotd, ANALIS_NAME,ANALIS_NUM,ID,date,Parent_Doc_ID ,OTD
 						from 
 							Laboratory3.dbo.ORDERS 
 						where 
@@ -352,20 +352,20 @@ select ctxtOtd collate Cyrillic_General_CI_AS,EXCECUROR_NAME collate Cyrillic_Ge
 				left join 
 					Laboratory3.dbo.RESULTS r 
 						on o.ID=r.USER_ID and a.NUM=r.ANALIS_NUM 
---Сервисная таблица для определения кода, цены и УЕТ(врача и медсестры)
+--РЎРµСЂРІРёСЃРЅР°СЏ С‚Р°Р±Р»РёС†Р° РґР»СЏ РѕРїСЂРµРґРµР»РµРЅРёСЏ РєРѕРґР°, С†РµРЅС‹ Рё РЈР•Рў(РІСЂР°С‡Р° Рё РјРµРґСЃРµСЃС‚СЂС‹)
 				left join 
 					service.dbo.AnalisInfo i 
 						on i.Name=r.PARAM_UNDER_GROUP or i.Name=o.ANALIS_NAME
 				) l 
 group by ctxtOtd,EXCECUROR_NAME,ANALIS_NAME,name,DATE,Parent_Doc_ID,otdclin
-/*Итоговая выборка. Соединение ЕИСа и услуг. Есть Талоны амбулаторного посещения без услуг, они выпадают отсюда и не считаются*/
---Это все прекрасно, но можно просто распределить по врачам и не париться
-select ISNULL(d.ctxtOtd,'Не определено') ctxtotd,ISNULL(CTXTPAYDOCTOR,surname+' '+ep.name+' '+second_name) ctxtpaydoctor2,
-case when Kod4 is null then 'Не определено'
-when Kod4 = ' ' then 'Не определено' else Kod4 end test,
-ISNULL(DTXTNAMEILL,'Не определено') dtxtnameill,
+/*РС‚РѕРіРѕРІР°СЏ РІС‹Р±РѕСЂРєР°. РЎРѕРµРґРёРЅРµРЅРёРµ Р•РРЎР° Рё СѓСЃР»СѓРі. Р•СЃС‚СЊ РўР°Р»РѕРЅС‹ Р°РјР±СѓР»Р°С‚РѕСЂРЅРѕРіРѕ РїРѕСЃРµС‰РµРЅРёСЏ Р±РµР· СѓСЃР»СѓРі, РѕРЅРё РІС‹РїР°РґР°СЋС‚ РѕС‚СЃСЋРґР° Рё РЅРµ СЃС‡РёС‚Р°СЋС‚СЃСЏ*/
+--Р­С‚Рѕ РІСЃРµ РїСЂРµРєСЂР°СЃРЅРѕ, РЅРѕ РјРѕР¶РЅРѕ РїСЂРѕСЃС‚Рѕ СЂР°СЃРїСЂРµРґРµР»РёС‚СЊ РїРѕ РІСЂР°С‡Р°Рј Рё РЅРµ РїР°СЂРёС‚СЊСЃСЏ
+select ISNULL(d.ctxtOtd,'РќРµ РѕРїСЂРµРґРµР»РµРЅРѕ') ctxtotd,ISNULL(CTXTPAYDOCTOR,surname+' '+ep.name+' '+second_name) ctxtpaydoctor2,
+case when Kod4 is null then 'РќРµ РѕРїСЂРµРґРµР»РµРЅРѕ'
+when Kod4 = ' ' then 'РќРµ РѕРїСЂРµРґРµР»РµРЅРѕ' else Kod4 end test,
+ISNULL(DTXTNAMEILL,'РќРµ РѕРїСЂРµРґРµР»РµРЅРѕ') dtxtnameill,
 DATE_END datDateVizit,1 isskol,
-sumib*flag cost, 1 koef,'Поликлиника' otdclin
+sumib*flag cost, 1 koef,'РџРѕР»РёРєР»РёРЅРёРєР°' otdclin
 into #t_eis_kmis_p
 from #t_eis_p ep				
 left join 
@@ -382,14 +382,14 @@ group by txtNumberAk,ctxtPayDoctor,ctxtOtd,Kod4,Kod3_,DTXTNAMEILL,DATDATEVIZIT,p
 left join
 IskStat2.dbo.Doctors d on ps.prMyDoctorCodeR=d.Name and d.Name<>''
 
-/*Итоговая выборка. Стоимость услуг и анализов умножаем на коэффициент полученный делением стоимости ИБ в ЕИСе на стоимость ИБ в КМИСе.*/
+/*РС‚РѕРіРѕРІР°СЏ РІС‹Р±РѕСЂРєР°. РЎС‚РѕРёРјРѕСЃС‚СЊ СѓСЃР»СѓРі Рё Р°РЅР°Р»РёР·РѕРІ СѓРјРЅРѕР¶Р°РµРј РЅР° РєРѕСЌС„С„РёС†РёРµРЅС‚ РїРѕР»СѓС‡РµРЅРЅС‹Р№ РґРµР»РµРЅРёРµРј СЃС‚РѕРёРјРѕСЃС‚Рё РР‘ РІ Р•РРЎРµ РЅР° СЃС‚РѕРёРјРѕСЃС‚СЊ РР‘ РІ РљРњРРЎРµ.*/
 select * 
 into #t_itog
 from
 (
 select 
 case when ctxtotd is null then otd else ctxtotd end ctxtotd,
-ISNULL(ctxtpaydoctor2,'Не определено')ctxtpaydoctor2,ISNULL(Test,'Не определено')Test,ISNULL(dtxtnameill,'Не определено')dtxtnameill,ISNULL(datdatevizit,'')datdatevizit,ISNULL(isskol,'1')isskol,
+ISNULL(ctxtpaydoctor2,'РќРµ РѕРїСЂРµРґРµР»РµРЅРѕ')ctxtpaydoctor2,ISNULL(Test,'РќРµ РѕРїСЂРµРґРµР»РµРЅРѕ')Test,ISNULL(dtxtnameill,'РќРµ РѕРїСЂРµРґРµР»РµРЅРѕ')dtxtnameill,ISNULL(datdatevizit,'')datdatevizit,ISNULL(isskol,'1')isskol,
 case when price*koef is null then sumibk else price*koef end cost,koef,case when otdclin is null then otd else otdclin end otdclin from #t_kmis_usl_s u
 full join
 (
@@ -404,15 +404,15 @@ group by RIGHT(num,16)
 ) k on right(u.num,16)=k.numb
 --order by koef, dtxtnameill
 union all
-/*МРТ. Итоговая выборка.*/
-select ctxtOtd,UserName ctxtpaydoctor2,'МРТ-СКТ-ЕИС' Test,'Не определено' dtxtnameill,/*convert(varchar,@bd) +'-'+convert(varchar,@ed)*/'' datDateVizit,1 isskol,sumv cost,1 koef, 'Поликлиника' otdclin from
+/*РњР Рў. РС‚РѕРіРѕРІР°СЏ РІС‹Р±РѕСЂРєР°.*/
+select ctxtOtd,UserName ctxtpaydoctor2,'РњР Рў-РЎРљРў-Р•РРЎ' Test,'РќРµ РѕРїСЂРµРґРµР»РµРЅРѕ' dtxtnameill,/*convert(varchar,@bd) +'-'+convert(varchar,@ed)*/'' datDateVizit,1 isskol,sumv cost,1 koef, 'РџРѕР»РёРєР»РёРЅРёРєР°' otdclin from
 (select  rtrim(SUBSTRING(docname,1,CHARINDEX(' ',docname))) docname,sum(sumib*flag) sumv from #t_eis_s_mrt group by docname) m
 left join
 (select ctxtotd,rtrim(SUBSTRING(UserName,1,CHARINDEX(' ',UserName))) docname,UserName from IskStat2.dbo.Doctors) d on m.docname = d.docname collate Cyrillic_General_CI_AS
 union all
 select * from #t_eis_kmis_p
 ) t
---where ctxtOtd in ('Физиотерапевтическое отделение','Эндоскопическое отделение')
+--where ctxtOtd in ('Р¤РёР·РёРѕС‚РµСЂР°РїРµРІС‚РёС‡РµСЃРєРѕРµ РѕС‚РґРµР»РµРЅРёРµ','Р­РЅРґРѕСЃРєРѕРїРёС‡РµСЃРєРѕРµ РѕС‚РґРµР»РµРЅРёРµ')
 --drop table #t_eis_kmis_s,#t_eis_kmis_s_ib,#t_eis_koeff_s,#t_eis_p,#t_eis_s,#t_eis_s_mrt,#t_kmis_usl_s,#t_itog,#t_eis_kmis_p
 
 select otdclin, sum(isskol),SUM(isskol*cost) from #t_itog group by otdclin
@@ -420,14 +420,14 @@ select otdclin, sum(isskol),SUM(isskol*cost) from #t_itog group by otdclin
 select otd, COUNT(*) kolvo,SUM(sumib*flag) summ  
 from #t_eis_kmis_s group by otd
 union all
-select 'Поликлиника' otd, COUNT(*) kolvo, sum(sumib*flag) summ from #t_eis_p
+select 'РџРѕР»РёРєР»РёРЅРёРєР°' otd, COUNT(*) kolvo, sum(sumib*flag) summ from #t_eis_p
 
 select ctxtotd, SUM(isskol) kolvo, SUM(isskol*cost) summ 
 from #t_itog group by ctxtotd*/
 
 --select sum(sumib*flag) from #t_eis_s 
 --select */*sum(sumib*flag)*/ from #t_eis_s_mrt
---select 'МРТ-СКТ Поликлиника' otd, COUNT(*) kolvo,SUM(sumib*flag) summ  from t_eis_s_mrt
+--select 'РњР Рў-РЎРљРў РџРѕР»РёРєР»РёРЅРёРєР°' otd, COUNT(*) kolvo,SUM(sumib*flag) summ  from t_eis_s_mrt
 --drop table #t_eis_kmis_s,#t_eis_kmis_s_ib,#t_eis_koeff_s,#t_eis_p,#t_eis_s,#t_eis_s_mrt,#t_kmis_usl_s,#t_itog,#t_eis_kmis_p,t_svod_all,t_svod_small
 drop table #t_itog
 --select * from #t_eis_kmis_s order by 1
